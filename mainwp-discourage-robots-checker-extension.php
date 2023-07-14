@@ -2,234 +2,160 @@
 /*
 Plugin Name: MainWP Discourage Robots Checker Extension
 Plugin URI:    https://www.georgenicolaou.me/plugins/mainwp-discourage-robots-checker
-Description:   This extension checks the status of all your child sites to see if the Discourage robots is on or off. To help you make sure your \"live\" sites are not blocking indexing.
+Description:   This extension checks the status of all your child sites to see if the Discourage robots is on or off. To help you make sure your "live" sites are not blocking indexing.
 Version: 1.0
- Author:        George Nicolaou
- * Author URI:    https://www.georgenicolaou.me/
- * Text Domain:   mainwp-discourage-robots-checker
- * License:       GPLv2
- * License URI:   https://www.gnu.org/licenses/gpl-2.0.html
+Author: George Nicolaou
+Author URI: https://www.georgenicolaou.me/
+Text Domain: mainwp-discourage-robots-checker
+License: GPLv2
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
  *
  * You should have received a copy of the GNU General Public License
  * along with MainWP Discourage Robots checker. If not, see <https://www.gnu.org/licenses/gpl-2.0.html/>.
  */
-class MainWPDiscourageRobotsCheckerExtension
-{
+
+class MainWPDiscourageRobotsCheckerExtension {
   
-    public function __construct()
-	{		
-		add_filter('mainwp-getsubpages-sites', array(&$this, 'managesites_subpage' ), 10, 1 );
-	}
+    public function __construct() {
+        add_filter('mainwp-getsubpages-sites', array(&$this, 'managesites_subpage'), 10, 1);
+    }
 
-	function managesites_subpage( $subPage ) {		
+    public function managesites_subpage($subPage) {    
+        $subPage[] = array(
+            'title'      => 'Discourage Robots Checker Extension',
+            'slug'       => 'DiscourageRobotsCheckerExtension',
+            'sitetab'    => true,
+            'menu_hidden' => true,
+            'callback'   => array('DiscourageRobotsCheckerExtension', 'renderPage'),
+        );
 
-		$subPage[] = array(
-			'title'                 => 'Discourage Robots Checker Extension',
-			'slug'                     => 'DiscourageRobotsCheckerExtension',
-			'sitetab'             => true,
-			'menu_hidden'     => true,
-			'callback'             => array( 'DiscourageRobotsCheckerExtension', 'renderPage' ),
-		);
-
-		return $subPage;
-	}
-
-    /*
-    * Create your extension page
-    */
+        return $subPage;
+    }
 
     public static function renderPage() {
         global $MainWPDiscourageRobotsCheckerExtensionActivator;
 
         // Fetch all child-sites 
-        $websites = apply_filters('mainwp-getsites', $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(), $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(), null);              
-        
+        $websites = apply_filters('mainwp-getsites', $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(), $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(), null);
+
         // Location to open on child site
-        $location = "admin.php?page=mainwp_child_tab";                 
-        
+        $location = "admin.php?page=mainwp_child_tab";
+
         if (is_array($websites)) {
             ?>      
             <div class="postbox">
                 <div class="inside">
-                    <p><?php _e('The MainWP Robots Checker Extension checks the status of all your child sites to see if the Discourage robots is on or off. To help you make sure your \"live\" sites are not blocking indexing.'); ?></p>
+                    <p><?php _e('The MainWP Robots Checker Extension checks the status of all your child sites to see if the Discourage robots is on or off. To help you make sure your "live" sites are not blocking indexing.'); ?></p>
                 </div>
             </div>
             <div class="postbox">
                 <h3 class="mainwp_box_title"><?php _e('Get Child Sites'); ?></h3>
                 <div class="inside">
-                    <em><?php _e('List all child sites and link to open the child site'); ?></em>
-                    <?php
-                    //Display number of your child sites
-                    ?>
-                    <p><?php echo __('Number of Child Sites: ') . count($websites); ?></p>
-                    <div id="mainwp_example_links">
-                        <?php
-                        //Display a list of your child site with a secure link to child site WP Admin (login not required)
-                        foreach($websites as $site) { 
-                            // Create link to open $location on child site
-                            $open_url = "admin.php?page=SiteOpen&newWindow=yes&websiteid=". $site['id'] . "&location=" . base64_encode($location) ;
-                            echo $site['name'] .": ";
-                            ?>
-                            <a href="<?php echo $open_url; ?>" class="queue" target="_blank"><?php _e("Open location", "mainwp");?></a>.                        
-                            <br/>              
-                        <?php            
-                        }
-                        ?>
-                    </div>  
-                </div>
-            </div>
-            
-            <div class="postbox">
-                <h3 class="mainwp_box_title"><?php _e('Get Posts From Child Sites'); ?></h3>
-                <div class="inside">
-                    <em><?php _e('List all posts from your child site'); ?></em>           
-                        <?php $site = $websites[0]; ?>
-                        <p><?php _e('Get posts from child site:'); ?> <?php echo $site['url'] ?> <a href="admin.php?page=Extensions-Mainwp-Example-Extension&siteid=<?php echo $site['id']; ?>" class="button button-primary"><?php _e('Click Here!'); ?></a></p>
-                        <?php            
-                        if (isset($_GET['siteid']) && !empty($_GET['siteid'])) {
-                            $websiteId = $_GET['siteid'];         
-                            //fetch information of one child-site                 
-                            $website = apply_filters('mainwp-getsites', $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(), $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(), $websiteId);            
-                            if ($website && is_array($website)) {
-                                $website = current($website);
-                            }  
-
-                            if (!$website) {
-                                echo "<p><strong>ERROR</strong>: ". __('Child Site Not Found') ."</p>";
-                            } else {
-
-                                // Example to call function get_all_posts on child-plugin to get posts on child site
-                                $post_data = array(               
-                                    'status' => 'publish',
-                                    'maxRecords' => 10
-                                );
-
-                                // hook to call the function get_all_posts
-                                $information = apply_filters('mainwp_fetchurlauthed', $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(), $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(), $websiteId, 'get_all_posts', $post_data);			                            
-                                
-                                if (is_array($information)) {
-                                    if (isset($information['error'])) {
-                                        echo "<p><strong>ERROR</strong>: " . $information['error'] . "</p>";
-                                    } else {                                                 
-                                        echo "<h3>"._('List of posts: ')."</h3>";
-                                        echo "<ol>";
-                                        foreach($information as $post) {
-                                            echo "<li>";
-                                            echo $post['title'];
-                                            ?>                        
-                                            <a href="<?php echo $website['url'] . (substr($website['url'], -1) != '/' ? '/' : '') . '?p=' . $post['id']; ?>"
-                                               target="_blank" 
-                                               title="View '<?php echo $post['title']; ?>'" 
-                                               rel="permalink"><?php _e('View Post'); ?></a>
-                                            <?php 
-                                            echo "</li>";
-                                        }
-                                        echo "</ol>";
-                                    }
-                                }                  
+                    <table class="widefat">
+                        <thead>
+                            <tr>
+                                <th><?php _e('Child Site'); ?></th>
+                                <th><?php _e('Discourage Robots Status'); ?></th>
+                                <th><?php _e('Toggle Status'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            // Display a table row for each child site with their Discourage Robots status and toggle button
+                            foreach ($websites as $site) {
+                                // Get the Discourage Robots status for the child site
+                                $discourage_robots = get_option('blog_public', 1) ? __('Off') : __('On');
+                                ?>
+                                <tr>
+                                    <td><?php echo $site['name']; ?></td>
+                                    <td><?php echo $discourage_robots; ?></td>
+                                    <td>
+                                        <form method="post" action="">
+                                            <input type="hidden" name="site_id" value="<?php echo $site['id']; ?>">
+                                            <input type="hidden" name="current_status" value="<?php echo $discourage_robots; ?>">
+                                            <button type="submit" name="toggle_status" class="button"><?php echo $discourage_robots === __('Off') ? __('Enable') : __('Disable'); ?></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <?php
                             }
-                        } 
-                    
-                    } else {
-                            echo "Child Sites Not Found";
-                    }
-                    ?>
+                            ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         <?php
-    }    
+        }    
+    }  
 }
 
-
-/*
-* Activator Class is used for extension activation and deactivation
-*/
-
-class MainWPDiscourageRobotsCheckerExtensionActivator
-{
+class MainWPDiscourageRobotsCheckerExtensionActivator {
     protected $mainwpMainActivated = false;
     protected $childEnabled = false;
     protected $childKey = false;
     protected $childFile;
-	protected $plugin_handle = 'mainwp-example-extension';
-	
+    protected $plugin_handle = 'mainwp-example-extension';
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->childFile = __FILE__;
         add_filter('mainwp-getextensions', array(&$this, 'get_this_extension'));
-        
+
         // This filter will return true if the main plugin is activated
         $this->mainwpMainActivated = apply_filters('mainwp-activated-check', false);
 
-        if ($this->mainwpMainActivated !== false)
-        {
+        if ($this->mainwpMainActivated !== false) {
             $this->activate_this_plugin();
-        }
-        else
-        {
+        } else {
             //Because sometimes our main plugin is activated after the extension plugin is activated we also have a second step, 
-            //listening to the 'mainwp-activated' action. This action is triggered by MainWP after initialisation. 
+            //listening to the 'mainwp-activated' action. This action is triggered by MainWP after initialization. 
             add_action('mainwp-activated', array(&$this, 'activate_this_plugin'));
         }        
         add_action('admin_notices', array(&$this, 'mainwp_error_notice'));
     }
 
-    function get_this_extension($pArray)
-    {
-        $pArray[] = array('plugin' => __FILE__,  'api' => $this->plugin_handle, 'mainwp' => false, 'callback' => array(&$this, 'settings'));
+    public function get_this_extension($pArray) {
+        $pArray[] = array('plugin' => __FILE__, 'api' => $this->plugin_handle, 'mainwp' => false, 'callback' => array(&$this, 'settings'));
         return $pArray;
     }
 
-    function settings()
-    {
+    public function settings() {
         //The "mainwp-pageheader-extensions" action is used to render the tabs on the Extensions screen. 
         //It's used together with mainwp-pagefooter-extensions and mainwp-getextensions
         do_action('mainwp-pageheader-extensions', __FILE__);
-        if ($this->childEnabled)
-        {
+        if ($this->childEnabled) {
             MainWPDiscourageRobotsCheckerExtension::renderPage();
-        }
-        else
-        {
+        } else {
             ?><div class="mainwp_info-box-yellow"><?php _e("The Extension has to be enabled to change the settings."); ?></div><?php
         }
         do_action('mainwp-pagefooter-extensions', __FILE__);
     }
-    
-    //The function "activate_this_plugin" is called when the main is initialized. 
-    function activate_this_plugin()
-    {
+
+    public function activate_this_plugin() {
         //Checking if the MainWP plugin is enabled. This filter will return true if the main plugin is activated.
         $this->mainwpMainActivated = apply_filters('mainwp-activated-check', $this->mainwpMainActivated);
-        
-        // The 'mainwp-extension-enabled-check' hook. If the plugin is not enabled this will return false, 
+
+        // The 'mainwp-extension-enabled-check' hook. If the plugin is not enabled, this will return false, 
         // if the plugin is enabled, an array will be returned containing a key. 
         // This key is used for some data requests to our main
         $this->childEnabled = apply_filters('mainwp-extension-enabled-check', __FILE__);       
 
         $this->childKey = $this->childEnabled['key'];
-		
-		new MainWPDiscourageRobotsCheckerExtension();
 
+        new MainWPDiscourageRobotsCheckerExtension();
     }
 
-    function mainwp_error_notice()
-    {
+    public function mainwp_error_notice() {
         global $current_screen;
-        if ($current_screen->parent_base == 'plugins' && $this->mainwpMainActivated == false)
-        {
+        if ($current_screen->parent_base == 'plugins' && $this->mainwpMainActivated == false) {
             echo '<div class="error"><p>MainWP Hello World! Extension ' . __('requires '). '<a href="http://mainwp.com/" target="_blank">MainWP</a>'. __(' Plugin to be activated in order to work. Please install and activate') . '<a href="http://mainwp.com/" target="_blank">MainWP</a> '.__('first.') . '</p></div>';
         }
     }
 
-    public function getChildKey()
-    {
+    public function getChildKey() {
         return $this->childKey;
     }
 
-    public function getChildFile()
-    {
+    public function getChildFile() {
         return $this->childFile;
     }
 }
