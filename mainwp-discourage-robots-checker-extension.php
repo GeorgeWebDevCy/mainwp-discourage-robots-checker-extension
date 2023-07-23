@@ -35,12 +35,12 @@ class MainWPDiscourageRobotsCheckerExtension {
 
     public static function renderPage() {
         global $MainWPDiscourageRobotsCheckerExtensionActivator;
-
-        // Fetch all child-sites 
+    
+        // Fetch all child-sites
         $websites = apply_filters('mainwp_getsites', $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(), $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(), null);
         // Location to open on child site
         $location = "admin.php?page=mainwp_child_tab";
-
+    
         if (is_array($websites)) {
             ?>      
             <div class="postbox">
@@ -63,15 +63,16 @@ class MainWPDiscourageRobotsCheckerExtension {
                             <?php
                             // Display a table row for each child site with their Discourage Robots status and toggle button
                             foreach ($websites as $site) {
-                                // Get the Discourage Robots status for the child site
-                                $discourage_robots = get_option('blog_public', 1) ? __('Off') : __('On');
+                                // Fetch the Discourage Robots status for the child site
+                                $site_id = $site['id'];
+                                $discourage_robots = self::get_discourage_robots_status($site_id);
                                 ?>
                                 <tr>
                                     <td><?php echo $site['name']; ?></td>
                                     <td><?php echo $discourage_robots; ?></td>
                                     <td>
                                         <form method="post" action="">
-                                            <input type="hidden" name="site_id" value="<?php echo $site['id']; ?>">
+                                            <input type="hidden" name="site_id" value="<?php echo $site_id; ?>">
                                             <input type="hidden" name="current_status" value="<?php echo $discourage_robots; ?>">
                                             <button type="submit" name="toggle_status" class="button"><?php echo $discourage_robots === __('Off') ? __('Enable') : __('Disable'); ?></button>
                                         </form>
@@ -84,13 +85,24 @@ class MainWPDiscourageRobotsCheckerExtension {
                     </table>
                 </div>
             </div>
-        <?php
-
-// Enqueue your custom CSS file here
-wp_enqueue_style('mainwp-discourage-robots-checker', plugin_dir_url(__FILE__) . 'mainwp-discourage-robots-checker.css');
+            <?php
     
-        }    
-    }  
+            // Enqueue your custom CSS file here
+            wp_enqueue_style('mainwp-discourage-robots-checker', plugin_dir_url(__FILE__) . 'mainwp-discourage-robots-checker.css');
+        }
+    }
+    
+    
+ // Helper function to get the Discourage Robots status for a specific child site
+private static function get_discourage_robots_status($site_id) {
+    // Get the "blog_public" option value from the reading settings of the child site
+    $discourage_robots = get_option('blog_public', 1) ? __('Off') : __('On');
+
+    return $discourage_robots;
+}
+
+    
+      
 }
 
 class MainWPDiscourageRobotsCheckerExtensionActivator {
@@ -105,7 +117,7 @@ class MainWPDiscourageRobotsCheckerExtensionActivator {
         add_filter('mainwp_getextensions', array(&$this, 'get_this_extension'));
 
         // This filter will return true if the main plugin is activated
-        $this->mainwpMainActivated = apply_filters('mainwp-activated-check', false);
+        $this->mainwpMainActivated = apply_filters('mainwp_activated_check', false);
 
         if ($this->mainwpMainActivated !== false) {
             $this->activate_this_plugin();
@@ -132,7 +144,8 @@ class MainWPDiscourageRobotsCheckerExtensionActivator {
         } else {
             ?><div class="mainwp_info-box-yellow"><?php _e("The Extension has to be enabled to change the settings."); ?></div><?php
         }
-        do_action('mainwp-pagefooter-extensions', __FILE__);
+        do_action('mainwp_pagefooter_extensions', __FILE__);
+
     }
 
     public function activate_this_plugin() {
