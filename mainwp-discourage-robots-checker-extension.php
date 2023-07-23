@@ -17,7 +17,8 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 class MainWPDiscourageRobotsCheckerExtension {
   
     public function __construct() {
-        add_filter('mainwp-getsubpages-sites', array(&$this, 'managesites_subpage'), 10, 1);
+        add_filter('mainwp_getsubpages_sites', array(&$this, 'managesites_subpage'), 10, 1);
+
     }
 
     public function managesites_subpage($subPage) {    
@@ -36,8 +37,7 @@ class MainWPDiscourageRobotsCheckerExtension {
         global $MainWPDiscourageRobotsCheckerExtensionActivator;
 
         // Fetch all child-sites 
-        $websites = apply_filters('mainwp-getsites', $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(), $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(), null);
-
+        $websites = apply_filters('mainwp_getsites', $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(), $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(), null);
         // Location to open on child site
         $location = "admin.php?page=mainwp_child_tab";
 
@@ -85,6 +85,10 @@ class MainWPDiscourageRobotsCheckerExtension {
                 </div>
             </div>
         <?php
+
+// Enqueue your custom CSS file here
+wp_enqueue_style('mainwp-discourage-robots-checker', plugin_dir_url(__FILE__) . 'mainwp-discourage-robots-checker.css');
+    
         }    
     }  
 }
@@ -98,7 +102,7 @@ class MainWPDiscourageRobotsCheckerExtensionActivator {
 
     public function __construct() {
         $this->childFile = __FILE__;
-        add_filter('mainwp-getextensions', array(&$this, 'get_this_extension'));
+        add_filter('mainwp_getextensions', array(&$this, 'get_this_extension'));
 
         // This filter will return true if the main plugin is activated
         $this->mainwpMainActivated = apply_filters('mainwp-activated-check', false);
@@ -108,7 +112,8 @@ class MainWPDiscourageRobotsCheckerExtensionActivator {
         } else {
             //Because sometimes our main plugin is activated after the extension plugin is activated we also have a second step, 
             //listening to the 'mainwp-activated' action. This action is triggered by MainWP after initialization. 
-            add_action('mainwp-activated', array(&$this, 'activate_this_plugin'));
+            add_action('mainwp_activated', array(&$this, 'activate_this_plugin'));
+
         }        
         add_action('admin_notices', array(&$this, 'mainwp_error_notice'));
     }
@@ -121,7 +126,7 @@ class MainWPDiscourageRobotsCheckerExtensionActivator {
     public function settings() {
         //The "mainwp-pageheader-extensions" action is used to render the tabs on the Extensions screen. 
         //It's used together with mainwp-pagefooter-extensions and mainwp-getextensions
-        do_action('mainwp-pageheader-extensions', __FILE__);
+        do_action('mainwp_pageheader_extensions', __FILE__);
         if ($this->childEnabled) {
             MainWPDiscourageRobotsCheckerExtension::renderPage();
         } else {
@@ -132,12 +137,13 @@ class MainWPDiscourageRobotsCheckerExtensionActivator {
 
     public function activate_this_plugin() {
         //Checking if the MainWP plugin is enabled. This filter will return true if the main plugin is activated.
-        $this->mainwpMainActivated = apply_filters('mainwp-activated-check', $this->mainwpMainActivated);
+        $this->mainwpMainActivated = apply_filters('mainwp_activated_check', $this->mainwpMainActivated);
+
 
         // The 'mainwp-extension-enabled-check' hook. If the plugin is not enabled, this will return false, 
         // if the plugin is enabled, an array will be returned containing a key. 
         // This key is used for some data requests to our main
-        $this->childEnabled = apply_filters('mainwp-extension-enabled-check', __FILE__);       
+        $this->childEnabled = apply_filters('mainwp_extension_enabled_check', __FILE__);       
 
         $this->childKey = $this->childEnabled['key'];
 
