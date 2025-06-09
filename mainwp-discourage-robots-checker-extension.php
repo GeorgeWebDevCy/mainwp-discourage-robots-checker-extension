@@ -3,7 +3,7 @@
 Plugin Name: MainWP Discourage Robots Checker Extension
 Plugin URI:    https://www.georgenicolaou.me/plugins/mainwp-discourage-robots-checker
 Description:   This extension checks the status of all your child sites to see if the Discourage robots is on or off. To help you make sure your "live" sites are not blocking indexing.
-Version: 1.3
+Version: 1.4
 Author: George Nicolaou
 Author URI: https://www.georgenicolaou.me/
 Text Domain: mainwp-discourage-robots-checker
@@ -121,7 +121,9 @@ class MainWPDiscourageRobotsCheckerExtension {
     private static function toggle_discourage_robots_status($site_id, $current_status) {
         global $MainWPDiscourageRobotsCheckerExtensionActivator;
 
-        $new_value = ($current_status === __('Off')) ? 0 : 1;
+        // Switch to using text values so the child plugin
+        // receives "on" or "off" rather than binary 0/1
+        $new_value = ($current_status === __('Off')) ? 'on' : 'off';
 
         apply_filters(
             'mainwp_fetchurlauthed',
