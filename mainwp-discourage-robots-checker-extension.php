@@ -3,7 +3,7 @@
 Plugin Name: MainWP Discourage Robots Checker Extension
 Plugin URI:    https://www.georgenicolaou.me/plugins/mainwp-discourage-robots-checker
 Description:   This extension checks the status of all your child sites to see if the Discourage robots is on or off. To help you make sure your "live" sites are not blocking indexing.
-Version: 1.0
+Version: 1.3
 Author: George Nicolaou
 Author URI: https://www.georgenicolaou.me/
 Text Domain: mainwp-discourage-robots-checker
@@ -27,7 +27,7 @@ class MainWPDiscourageRobotsCheckerExtension {
             'slug'       => 'DiscourageRobotsCheckerExtension',
             'sitetab'    => true,
             'menu_hidden' => true,
-            'callback'   => array('DiscourageRobotsCheckerExtension', 'renderPage'),
+            'callback'   => array('MainWPDiscourageRobotsCheckerExtension', 'renderPage'),
         );
 
         return $subPage;
@@ -35,11 +35,15 @@ class MainWPDiscourageRobotsCheckerExtension {
 
     public static function renderPage() {
         global $MainWPDiscourageRobotsCheckerExtensionActivator;
-    
+
+        if (isset($_POST['toggle_status'], $_POST['site_id'], $_POST['current_status']) && check_admin_referer('toggle_discourage_robots_' . intval($_POST['site_id']))) {
+            $site_id = intval($_POST['site_id']);
+            $current_status = sanitize_text_field($_POST['current_status']);
+            self::toggle_discourage_robots_status($site_id, $current_status);
+        }
+
         // Fetch all child-sites
         $websites = apply_filters('mainwp_getsites', $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(), $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(), null);
-        // Location to open on child site
-        $location = "admin.php?page=mainwp_child_tab";
     
         if (is_array($websites)) {
             ?>      
@@ -72,6 +76,7 @@ class MainWPDiscourageRobotsCheckerExtension {
                                     <td><?php echo $discourage_robots; ?></td>
                                     <td>
                                         <form method="post" action="">
+                                            <?php wp_nonce_field('toggle_discourage_robots_' . $site_id); ?>
                                             <input type="hidden" name="site_id" value="<?php echo $site_id; ?>">
                                             <input type="hidden" name="current_status" value="<?php echo $discourage_robots; ?>">
                                             <button type="submit" name="toggle_status" class="button"><?php echo $discourage_robots === __('Off') ? __('Enable') : __('Disable'); ?></button>
@@ -93,13 +98,42 @@ class MainWPDiscourageRobotsCheckerExtension {
     }
     
     
- // Helper function to get the Discourage Robots status for a specific child site
-private static function get_discourage_robots_status($site_id) {
-    // Get the "blog_public" option value from the reading settings of the child site
-    $discourage_robots = get_option('blog_public', 1) ? __('Off') : __('On');
+    // Helper function to get the Discourage Robots status for a specific child site
+    private static function get_discourage_robots_status($site_id) {
+        global $MainWPDiscourageRobotsCheckerExtensionActivator;
 
-    return $discourage_robots;
-}
+        $response = apply_filters(
+            'mainwp_fetchurlauthed',
+            array(
+                'action' => 'get_discourage_robots_status'
+            ),
+            $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(),
+            $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(),
+            $site_id
+        );
+
+        $blog_public = isset($response['blog_public']) ? intval($response['blog_public']) : 1;
+
+        return $blog_public ? __('Off') : __('On');
+    }
+
+    // Helper to toggle Discourage Robots status on a child site
+    private static function toggle_discourage_robots_status($site_id, $current_status) {
+        global $MainWPDiscourageRobotsCheckerExtensionActivator;
+
+        $new_value = ($current_status === __('Off')) ? 0 : 1;
+
+        apply_filters(
+            'mainwp_fetchurlauthed',
+            array(
+                'action' => 'set_discourage_robots_status',
+                'value'  => $new_value,
+            ),
+            $MainWPDiscourageRobotsCheckerExtensionActivator->getChildFile(),
+            $MainWPDiscourageRobotsCheckerExtensionActivator->getChildKey(),
+            $site_id
+        );
+    }
 
     
       
